@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Controllo Dashcam via Bluetooth</title>
+</head>
+<body>
+    <h1>Controllo Dashcam via Bluetooth</h1>
+    <button onclick="connectBluetooth()">Connetti alla Dashcam</button>
+    <button onclick="sendCommand('enable_ap')">Attiva Access Point</button>
+    <button onclick="sendCommand('disable_ap')">Disattiva Access Point</button>
+
+    <script>
+        let bluetoothDevice;
+        let serviceUUID = "0000fff0-0000-1000-8000-00805f9b34fb";
+        let characteristicUUID = "0000fff1-0000-1000-8000-00805f9b34fb";
+        let characteristic;
+
+        async function connectBluetooth() {
+            try {
+                bluetoothDevice = await navigator.bluetooth.requestDevice({
+                    acceptAllDevices: true,
+                    optionalServices: [serviceUUID]
+                });
+
+                const server = await bluetoothDevice.gatt.connect();
+                const service = await server.getPrimaryService(serviceUUID);
+                characteristic = await service.getCharacteristic(characteristicUUID);
+
+                alert("Connessione riuscita alla Dashcam!");
+            } catch (error) {
+                console.error("Errore di connessione:", error);
+                alert("Connessione fallita!");
+            }
+        }
+
+        async function sendCommand(command) {
+            if (!characteristic) {
+                alert("Non sei connesso alla Dashcam!");
+                return;
+            }
+
+            try {
+                let encoder = new TextEncoder();
+                await characteristic.writeValue(encoder.encode(command));
+                alert(`Comando "${command}" inviato con successo!`);
+            } catch (error) {
+                console.error("Errore nell'invio del comando:", error);
+                alert("Errore nell'invio del comando.");
+            }
+        }
+    </script>
+</body>
+</html>
