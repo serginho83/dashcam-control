@@ -37,30 +37,44 @@
     }
 
     async function setNormalMode() {
+      let confirmMessage = "⚠️ ATTENZIONE: Cambiare a Modalità Normale richiede un riavvio manuale.\n\n" +
+                           "1️⃣ Il Raspberry Pi si spegnerà.\n" +
+                           "2️⃣ Stacca l'alimentazione della Dashcam.\n" +
+                           "3️⃣ Ricollega l'alimentazione per riaccendere il dispositivo.\n\n" +
+                           "Vuoi procedere?";
+      if (!confirm(confirmMessage)) return;
+
       await sendCommand("set_mode=0");
     }
 
     async function setAPMode() {
+      let confirmMessage = "⚠️ ATTENZIONE: Passare alla Modalità AP riavvierà il sistema automaticamente.\n\n" +
+                           "Il Raspberry Pi si riavvierà ora.\n\n" +
+                           "Vuoi procedere?";
+      if (!confirm(confirmMessage)) return;
+
       await sendCommand("set_mode=1");
     }
 
     async function sendCommand(command) {
       if (!characteristic) {
-        alert("Non sei connesso al Raspberry!");
-        return;
-      }
-      // Avviso all'utente che questo comporterà un riavvio
-      if (!confirm("ATTENZIONE: l'operazione richiede il riavvio del sistema. Vuoi procedere?")) {
+        alert("❌ Non sei connesso al Raspberry!");
         return;
       }
 
       try {
         let encoder = new TextEncoder();
         await characteristic.writeValue(encoder.encode(command));
-        alert("Comando inviato con successo! Il sistema si riavvierà a breve.");
+
+        if (command === "set_mode=0") {
+          alert("✅ Comando inviato con successo! Ora scollega l'alimentazione e riavvia manualmente la Dashcam.");
+        } else {
+          alert("✅ Comando inviato con successo! Il sistema si riavvierà a breve.");
+        }
+
       } catch (error) {
         console.error("Errore nell'invio del comando:", error);
-        alert("Errore nell'invio del comando.");
+        alert("❌ Errore nell'invio del comando.");
       }
     }
   </script>
