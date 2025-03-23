@@ -124,6 +124,12 @@
     const configCharUUID = '0000fff2-0000-1000-8000-00805f9b34fb';
     let configCharacteristic;
     let device;
+    // Definisci setStatus prima di tutto
+function setStatus(message, className) {
+  const statusDiv = document.getElementById('status');
+  statusDiv.textContent = message;
+  statusDiv.className = `status ${className}`;
+}
 
     async function connectBluetooth() {
       try {
