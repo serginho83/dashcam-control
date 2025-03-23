@@ -5,7 +5,69 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Configurazione Dashcam</title>
   <style>
-    /* Stili CSS... */
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    
+    .status {
+      padding: 15px;
+      margin: 20px 0;
+      border-radius: 5px;
+      font-weight: bold;
+      text-align: center;
+    }
+    
+    .connected { background: #d4edda; color: #155724; }
+    .disconnected { background: #f8d7da; color: #721c24; }
+    .connecting { background: #fff3cd; color: #856404; }
+    
+    form {
+      background: #f9f9f9;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    fieldset {
+      border: 1px solid #ddd;
+      padding: 20px;
+      margin-bottom: 20px;
+      border-radius: 5px;
+    }
+    
+    legend {
+      font-weight: bold;
+      color: #333;
+    }
+    
+    label {
+      display: block;
+      margin: 10px 0 5px;
+    }
+    
+    input, select {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 15px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    
+    button {
+      background: #007bff;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    
+    button:hover {
+      background: #0056b3;
+    }
   </style>
 </head>
 <body>
@@ -14,7 +76,61 @@
   <div id="status" class="status disconnected">Disconnesso</div>
 
   <form id="configForm" style="display: none;">
-    <!-- Form fields... -->
+    <!-- Sezione Immagine -->
+    <fieldset>
+      <legend>Impostazioni Immagine</legend>
+      <label>Qualità JPEG (%): 
+        <input type="number" id="imageQuality" min="1" max="100" required>
+      </label>
+      
+      <label>Risoluzione:
+        <select id="imageResolution" required>
+          <option value="small">Piccola (640x480)</option>
+          <option value="medium">Media (1280x720)</option>
+          <option value="large">Grande (1920x1080)</option>
+        </select>
+      </label>
+      
+      <label>Intervallo cattura (s): 
+        <input type="number" id="captureInterval" min="1" required>
+      </label>
+    </fieldset>
+
+    <!-- Sezione FTP -->
+    <fieldset>
+      <legend>Configurazione FTP</legend>
+      <label>Host: <input type="text" id="ftpHost" required></label>
+      <label>User: <input type="text" id="ftpUser" required></label>
+      <label>Password: <input type="password" id="ftpPassword" required></label>
+    </fieldset>
+
+    <!-- Sezione GPS -->
+    <fieldset>
+      <legend>Impostazioni GPS</legend>
+      <label>Intervallo invio dati (s): 
+        <input type="number" id="gpsInterval" min="1" required>
+      </label>
+    </fieldset>
+
+    <!-- Sezione WiFi -->
+    <fieldset>
+      <legend>Configurazione WiFi</legend>
+      <label>SSID: <input type="text" id="wifiSsid" required></label>
+      <label>Password: <input type="password" id="wifiPassword" required></label>
+    </fieldset>
+
+    <!-- Sezione Connessione -->
+    <fieldset>
+      <legend>Tipo di Connessione</legend>
+      <label>Tipo:
+        <select id="connectionType" required>
+          <option value="hotspot">Hotspot</option>
+          <option value="lte">LTE</option>
+        </select>
+      </label>
+    </fieldset>
+
+    <button type="submit">Salva Configurazione</button>
   </form>
 
   <button id="connectBtn">Connetti al dispositivo</button>
@@ -39,15 +155,16 @@
           throw new Error('Timeout connessione (30 secondi)');
         }, 30000);
 
-        // Richiesta dispositivo
+        // Richiesta dispositivo con fallback
         device = await navigator.bluetooth.requestDevice({
           filters: [{ services: [serviceUUID] }],
-          optionalServices: [serviceUUID]
+          optionalServices: [serviceUUID],
+          acceptAllDevices: true
         });
 
         device.addEventListener('gattserverdisconnected', onDisconnected);
         
-        // Connessione GATT
+        // Connessione al GATT server
         const server = await device.gatt.connect();
         clearTimeout(connectionTimeout);
 
@@ -71,7 +188,62 @@
       }
     }
 
-    // Funzioni di supporto...
+    function populateForm(configText) {
+      const config = Object.fromEntries(
+        configText.split('\n').map(line => line.split('='))
+      );
+
+      document.getElementById('imageQuality').value = config.image_quality;
+      document.getElementById('imageResolution').value = config.image_resolution;
+      document.getElementById('captureInterval').value = config.capture_interval;
+      document.getElementById('ftpHost').value = config.ftp_host;
+      document.getElementById('ftpUser').value = config.ftp_user;
+      document.getElementById('ftpPassword').value = config.ftp_password;
+      document.getElementById('gpsInterval').value = config.gps_interval;
+      document.getElementById('wifiSsid').value = config.wifi_ssid;
+      document.getElementById('wifiPassword').value = config.wifi_password;
+      document.getElementById('connectionType').value = config.connection_type;
+    }
+
+    document.getElementById('configForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const config = {
+        image_quality: document.getElementById('imageQuality').value,
+        image_resolution: document.getElementById('imageResolution').value,
+        capture_interval: document.getElementById('captureInterval').value,
+        ftp_host: document.getElementById('ftpHost').value,
+        ftp_user: document.getElementById('ftpUser').value,
+        ftp_password: document.getElementById('ftpPassword').value,
+        gps_interval: document.getElementById('gpsInterval').value,
+        wifi_ssid: document.getElementById('wifiSsid').value,
+        wifi_password: document.getElementById('wifiPassword').value,
+        connection_type: document.getElementById('connectionType').value
+      };
+
+      const configText = Object.entries(config)
+        .map(([key, value]) => `${key}=${value}`)
+        .join('\n');
+
+      try {
+        await configCharacteristic.writeValue(new TextEncoder().encode(configText));
+        alert('Configurazione salvata con successo!');
+      } catch (error) {
+        alert(`Errore durante il salvataggio: ${error.message}`);
+      }
+    });
+
+    document.getElementById('connectBtn').addEventListener('click', () => {
+      connectBluetooth();
+    });
+
+    navigator.bluetooth.getAvailability()
+      .then(available => {
+        if (!available) {
+          setStatus('Bluetooth non disponibile', 'disconnected');
+          document.getElementById('connectBtn').disabled = true;
+        }
+      });
   </script>
 </body>
 </html>
