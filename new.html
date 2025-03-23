@@ -131,38 +131,45 @@ function setStatus(message, className) {
   statusDiv.className = `status ${className}`;
 }
 
-    async function connectBluetooth() {
-      try {
-        setStatus('Connessione in corso...', 'connecting');
-        
-        if (!navigator.bluetooth) {
-          throw new Error('Web Bluetooth non supportato');
-        }
-
-        device = await navigator.bluetooth.requestDevice({
-          filters: [{ services: [serviceUUID] }],
-          optionalServices: [serviceUUID]
-        });
-
-        device.addEventListener('gattserverdisconnected', onDisconnected);
-        
-        const server = await device.gatt.connect();
-        const service = await server.getPrimaryService(serviceUUID);
-        configCharacteristic = await service.getCharacteristic(configCharUUID);
-
-        setStatus('Connesso', 'connected');
-        document.getElementById('configForm').style.display = 'block';
-        document.getElementById('connectBtn').style.display = 'none';
-
-        const configData = await configCharacteristic.readValue();
-        const configText = new TextDecoder().decode(configData);
-        populateForm(configText);
-
-      } catch (error) {
-        setStatus(`Errore: ${error.message}`, 'disconnected');
-        console.error('Errore connessione:', error);
-      }
+   async function connectBluetooth() {
+  try {
+    setStatus('Connessione in corso...', 'connecting');
+    
+    if (!navigator.bluetooth) {
+      throw new Error('Web Bluetooth non supportato');
     }
+
+    console.log('Richiesta dispositivo Bluetooth...');
+    device = await navigator.bluetooth.requestDevice({
+      filters: [{ services: [serviceUUID] }],
+      optionalServices: [serviceUUID]
+    });
+
+    console.log('Dispositivo trovato:', device.name);
+    device.addEventListener('gattserverdisconnected', onDisconnected);
+    
+    console.log('Connessione al GATT server...');
+    const server = await device.gatt.connect();
+    
+    console.log('Ottenimento del servizio...');
+    const service = await server.getPrimaryService(serviceUUID);
+    
+    console.log('Ottenimento della caratteristica...');
+    configCharacteristic = await service.getCharacteristic(configCharUUID);
+
+    setStatus('Connesso', 'connected');
+    document.getElementById('configForm').style.display = 'block';
+    document.getElementById('connectBtn').style.display = 'none';
+
+    const configData = await configCharacteristic.readValue();
+    const configText = new TextDecoder().decode(configData);
+    populateForm(configText);
+
+  } catch (error) {
+    setStatus(`Errore: ${error.message}`, 'disconnected');
+    console.error('Errore connessione:', error);
+  }
+}
 
     function populateForm(configText) {
       const config = Object.fromEntries(
